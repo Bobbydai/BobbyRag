@@ -16,7 +16,7 @@ except ImportError as e:
     sys.exit(1)
 
 HTTP_HOST = '0.0.0.0'
-HTTP_PORT = CONFIG.HTTP_LISTEN_PORT or 8080
+HTTP_PORT = CONFIG.HTTP_LISTEN_PORT or 8083
 DEBUG = CONFIG.DEBUG or False
 
 LOG_DIR = os.path.join(PROJECT_DIR, 'data', 'logs')
