@@ -7,12 +7,16 @@
     @desc:
 """
 import os
+import time
 from typing import List, Dict
 
 from django.db.models import QuerySet
 
 from application.chat_pipeline.I_base_chat_pipeline import ParagraphPipelineModel
 from application.chat_pipeline.step.search_dataset_step.i_search_dataset_step import ISearchDatasetStep
+from apps.setting.models_provider.tools import get_model_instance_by_model_user_id
+from langchain_core.documents import Document
+
 from common.config.embedding_config import VectorStore, ModelManage
 from common.db.search import native_search
 from common.util.file_util import get_file_content
@@ -62,7 +66,29 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
         if embedding_list is None:
             return []
         paragraph_list = self.list_paragraph(embedding_list, vector)
-        result = [self.reset_paragraph(paragraph, embedding_list) for paragraph in paragraph_list]
+        
+        reranker_model = get_model_instance_by_model_user_id('728583d2-a188-11ef-abd3-26cf8447a8c9',user_id)
+        
+        documents=[Document(row.get('content')) for row in paragraph_list]
+        
+        start_time=time.time()
+        
+        rerank_results = reranker_model.compress_documents(
+            documents,
+            exec_problem_text)
+        
+        
+        execution_time = time.time() - start_time
+        print(f"reranker_model.compress_documents 执行时间: {execution_time:.4f} 秒")
+
+        rerank_dict = {doc.page_content: doc.metadata['relevance_score'] for doc in rerank_results}
+        
+        for paragraph in paragraph_list:
+            paragraph['similarity'] = rerank_dict[paragraph['content']]
+            paragraph['comprehensive_score'] = rerank_dict[paragraph['content']]
+        
+        result = [self.reset_paragraph(paragraph, embedding_list) for paragraph in paragraph_list if paragraph['similarity'] > similarity]
+        
         return result
 
     @staticmethod
@@ -73,8 +99,8 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
             find_embedding = filter_embedding_list[-1]
             return (ParagraphPipelineModel.builder()
                     .add_paragraph(paragraph)
-                    .add_similarity(find_embedding.get('similarity'))
-                    .add_comprehensive_score(find_embedding.get('comprehensive_score'))
+                    .add_similarity(paragraph.get('similarity'))
+                    .add_comprehensive_score(paragraph.get('comprehensive_score'))
                     .add_dataset_name(paragraph.get('dataset_name'))
                     .add_document_name(paragraph.get('document_name'))
                     .add_hit_handling_method(paragraph.get('hit_handling_method'))
