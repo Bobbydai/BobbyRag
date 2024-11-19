@@ -6,6 +6,8 @@
       <AppIcon iconName="app-reference-outlined" class="mr-4"></AppIcon>
       引用分段 {{ data.paragraph_list?.length || 0 }}</el-button
     >
+    <!-- 添加ttft的样式 -->
+    <span v-if="data.ttft" class="mr-4 color-secondary">TTFT: {{ data.ttft }}</span>
   </div>
   <div class="mt-8" v-if="!isWorkFlow(props.type)">
     <el-space wrap>
