@@ -740,8 +740,9 @@ class DocumentSerializers(ApiMixin, serializers.Serializer):
         def get_paragraph_model(document_model, paragraph_list: List):
             dataset_id = document_model.dataset_id
             paragraph_model_dict_list = [ParagraphSerializers.Create(
-                data={'dataset_id': dataset_id, 'document_id': str(document_model.id)}).get_paragraph_problem_model(
-                dataset_id, document_model.id, paragraph) for paragraph in paragraph_list]
+            data={'dataset_id': dataset_id, 'document_id': str(document_model.id)}
+            ).get_paragraph_problem_model(dataset_id, document_model.id, paragraph, index + 1)
+                for index, paragraph in enumerate(paragraph_list)]
 
             paragraph_model_list = []
             problem_paragraph_object_list = []
@@ -849,7 +850,9 @@ class DocumentSerializers(ApiMixin, serializers.Serializer):
                     {'key': '空格', 'value': '(?<! ) (?! )'},
                     {'key': '分号', 'value': '(?<!；)；(?!；)'}, {'key': '逗号', 'value': '(?<!，)，(?!，)'},
                     {'key': '句号', 'value': '(?<!。)。(?!。)'}, {'key': '回车', 'value': '(?<!\\n)\\n(?!\\n)'},
-                    {'key': '空行', 'value': '(?<!\\n)\\n\\n(?!\\n)'}]
+                    {'key': '空行', 'value': '(?<!\\n)\\n\\n(?!\\n)'},
+                    {'key': 'json', 'value': '(?<!{){(?!{)'}
+]
 
     class Batch(ApiMixin, serializers.Serializer):
         dataset_id = serializers.UUIDField(required=True, error_messages=ErrMessage.uuid("知识库id"))

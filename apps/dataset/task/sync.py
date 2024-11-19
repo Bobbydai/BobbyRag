@@ -26,7 +26,7 @@ max_kb = logging.getLogger("max_kb")
 def sync_web_dataset(dataset_id: str, url: str, selector: str):
     try:
         max_kb.info(f"开始--->开始同步web知识库:{dataset_id}")
-        ForkManage(url, selector.split(" ") if selector is not None else []).fork(2, set(),
+        ForkManage(url, selector.split(" ") if selector is not None else []).fork(100, set(),
                                                                                   get_save_handler(dataset_id,
                                                                                                    selector))
         max_kb.info(f"结束--->结束同步web知识库:{dataset_id}")
@@ -38,7 +38,7 @@ def sync_web_dataset(dataset_id: str, url: str, selector: str):
 def sync_replace_web_dataset(dataset_id: str, url: str, selector: str):
     try:
         max_kb.info(f"开始--->开始同步web知识库:{dataset_id}")
-        ForkManage(url, selector.split(" ") if selector is not None else []).fork(2, set(),
+        ForkManage(url, selector.split(" ") if selector is not None else []).fork(100, set(),
                                                                                   get_sync_handler(dataset_id
                                                                                                    ))
         max_kb.info(f"结束--->结束同步web知识库:{dataset_id}")

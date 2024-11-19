@@ -72,18 +72,18 @@ def event_content(response,
         if is_ai_chat:
             try:
                 request_token = chat_model.get_num_tokens_from_messages(message_list)
-                response_token = chat_model.get_num_tokens(all_text)
+                # response_token = chat_model.get_num_tokens(all_text)
             except Exception as e:
                 request_token = 0
                 response_token = 0
         else:
             request_token = 0
             response_token = 0
-        write_context(step, manage, request_token, response_token, all_text)
+        write_context(step, manage, request_token, 0, all_text)
         post_response_handler.handler(chat_id, chat_record_id, paragraph_list, problem_text,
                                       all_text, manage, step, padding_problem_text, client_id)
         yield manage.get_base_to_response().to_stream_chunk_response(chat_id, str(chat_record_id), '', True,
-                                                                     request_token, response_token)
+                                                                     request_token, 0)
         add_access_num(client_id, client_type)
     except Exception as e:
         logging.getLogger("max_kb_error").error(f'{str(e)}:{traceback.format_exc()}')
@@ -162,6 +162,7 @@ class BaseChatStep(IChatStep):
         if chat_model is None:
             return iter([AIMessageChunk('抱歉，没有配置 AI 模型，无法优化引用分段，请先去应用中设置 AI 模型。')]), False
         else:
+            print(message_list)
             return chat_model.stream(message_list), True
 
     def execute_stream(self, message_list: List[BaseMessage],

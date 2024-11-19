@@ -7,6 +7,7 @@
     @desc:
 """
 import os
+import re
 import time
 from typing import List, Dict
 
@@ -14,7 +15,6 @@ from django.db.models import QuerySet
 
 from application.chat_pipeline.I_base_chat_pipeline import ParagraphPipelineModel
 from application.chat_pipeline.step.search_dataset_step.i_search_dataset_step import ISearchDatasetStep
-from apps.setting.models_provider.tools import get_model_instance_by_model_user_id
 from langchain_core.documents import Document
 
 from common.config.embedding_config import VectorStore, ModelManage
@@ -67,7 +67,15 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
             return []
         paragraph_list = self.list_paragraph(embedding_list, vector)
         
-        reranker_model = get_model_instance_by_model_user_id('728583d2-a188-11ef-abd3-26cf8447a8c9',user_id)
+        # paragraph_list=merge_paragraphs(paragraph_list,1)
+
+        rerank_model_id='728583d2-a188-11ef-abd3-26cf8447a8c9'
+        
+        # reranker_model = get_model_instance_by_model_user_id('rerank_model_id',user_id) 
+        # 这样获取模型实例用python main.py start 起服务会直接挂，还没深入研究，感觉不搭嘎。。。
+        
+        reranker_model = get_model_by_id(rerank_model_id,user_id)
+        reranker_model = ModelManage.get_model(rerank_model_id, lambda _id: get_model(reranker_model))
         
         documents=[Document(row.get('content')) for row in paragraph_list]
         
@@ -125,7 +133,7 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
                                        get_file_content(
                                            os.path.join(PROJECT_DIR, "apps", "application", 'sql',
                                                         'list_dataset_paragraph_by_paragraph_id.sql')),
-                                       with_table_name=True)
+                                       with_table_name=True)                        
         # 如果向量库中存在脏数据 直接删除
         if len(paragraph_list) != len(paragraph_id_list):
             exist_paragraph_list = [row.get('id') for row in paragraph_list]
@@ -158,3 +166,37 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
             'answer_tokens': 0,
             'cost': 0
         }
+def merge_paragraphs(paragraph_list, num_paragraphs=1):
+    processed_paragraphs = set()
+
+    # 遍历每个初始段落，查找并合并相邻段落的内容
+    for paragraph in paragraph_list:
+        document_sort_id = paragraph.get('document_sort_id')
+        if document_sort_id:
+            processed_paragraphs.add(document_sort_id)
+
+    for paragraph in paragraph_list:
+        document_sort_id = paragraph.get('document_sort_id')
+        document_id = paragraph.get('document_id')
+        if document_sort_id and document_id:
+            match = re.match(r'.*?_?(\d+)$', document_sort_id)
+            if match:
+                chunk_number = int(match.group(1))
+
+                # 查找前几个段落
+                for i in range(1, num_paragraphs + 1):
+                    prev_chunk_id = f"{document_id}_{chunk_number - i}"
+                    prev_paragraph = Paragraph.objects.filter(document_sort_id=prev_chunk_id, document_id=document_id).first()
+                    if prev_paragraph and prev_paragraph.document_sort_id not in processed_paragraphs:
+                        paragraph['content'] = f"{prev_paragraph.content}\n{paragraph['content']}"
+                        processed_paragraphs.add(prev_paragraph.document_sort_id)
+
+                # 查找后几个段落
+                for i in range(1, num_paragraphs + 1):
+                    next_chunk_id = f"{document_id}_{chunk_number + i}"
+                    next_paragraph = Paragraph.objects.filter(document_sort_id=next_chunk_id, document_id=document_id).first()
+                    if next_paragraph and next_paragraph.document_sort_id not in processed_paragraphs:
+                        paragraph['content'] += f"\n{next_paragraph.content}"
+                        processed_paragraphs.add(next_paragraph.document_sort_id)
+
+    return paragraph_list

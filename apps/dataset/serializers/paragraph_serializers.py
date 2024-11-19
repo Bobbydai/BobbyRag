@@ -599,12 +599,13 @@ class ParagraphSerializers(ApiMixin, serializers.Serializer):
                 with_valid=True)
 
         @staticmethod
-        def get_paragraph_problem_model(dataset_id: str, document_id: str, instance: Dict):
+        def get_paragraph_problem_model(dataset_id: str, document_id: str, instance: Dict, index: int):
             paragraph = Paragraph(id=uuid.uuid1(),
                                   document_id=document_id,
                                   content=instance.get("content"),
                                   dataset_id=dataset_id,
-                                  title=instance.get("title") if 'title' in instance else '')
+                                  title=instance.get("title") if 'title' in instance else '',
+                                  document_sort_id=f"{document_id}_{index}")
             problem_paragraph_object_list = [
                 ProblemParagraphObject(dataset_id, document_id, paragraph.id, problem.get('content')) for problem in
                 (instance.get('problem_list') if 'problem_list' in instance else [])]

@@ -96,7 +96,7 @@ class Paragraph(AppModelMixin):
                               default=Status.embedding)
     hit_num = models.IntegerField(verbose_name="命中次数", default=0)
     is_active = models.BooleanField(default=True)
-
+    document_sort_id = models.CharField(max_length=256,verbose_name="排序id", default="")
     class Meta:
         db_table = "paragraph"
 

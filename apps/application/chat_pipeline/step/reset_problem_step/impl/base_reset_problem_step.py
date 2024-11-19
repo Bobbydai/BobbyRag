@@ -16,7 +16,9 @@ from common.util.split_model import flat_map
 from setting.models_provider.tools import get_model_instance_by_model_user_id
 
 prompt = (
-    '()里面是用户问题,根据上下文回答揣测用户问题({question}) 要求: 输出一个补全问题,并且放在<data></data>标签中')
+    '上下文对话内容:{context},问题:{question} 要求: 首先判断问题与上下文对话内容的关系：若问题与上下文的内容连贯，关联度高则理解上下文对话内容，在其基础上全面总结真正的问题，以客户的角度输出问题，主语是\'我\',不要输出推理过程；若当前问题突然转变话题，与上下文无关，则将该对话视为客户问题，不要推理不要猜测，不要附带前面的对话内容，只输出问题。输出格式：输出问题并且放在<data></data>标签中')
+
+# todo: 加些例子帮助模型辅助理解
 
 
 class BaseResetProblemStep(IResetProblemStep):
@@ -29,9 +31,9 @@ class BaseResetProblemStep(IResetProblemStep):
         history_message = [[history_chat_record[index].get_human_message(), history_chat_record[index].get_ai_message()]
                            for index in
                            range(start_index if start_index > 0 else 0, len(history_chat_record))]
-        reset_prompt = problem_optimization_prompt if problem_optimization_prompt else prompt
-        message_list = [*flat_map(history_message),
-                        HumanMessage(content=reset_prompt.replace('{question}', problem_text))]
+        # reset_prompt = problem_optimization_prompt if problem_optimization_prompt else prompt
+        reset_prompt=prompt
+        message_list = [HumanMessage(content=reset_prompt.replace('{question}', problem_text).replace('{context}', str(history_message)))]
         response = chat_model.invoke(message_list)
         padding_problem = problem_text
         if response.content.__contains__("<data>") and response.content.__contains__('</data>'):
@@ -44,12 +46,12 @@ class BaseResetProblemStep(IResetProblemStep):
 
         try:
             request_token = chat_model.get_num_tokens_from_messages(message_list)
-            response_token = chat_model.get_num_tokens(padding_problem)
+            # response_token = chat_model.get_num_tokens(padding_problem)
         except Exception as e:
             request_token = 0
             response_token = 0
         self.context['message_tokens'] = request_token
-        self.context['answer_tokens'] = response_token
+        self.context['answer_tokens'] = 0
         return padding_problem
 
     def get_details(self, manage, **kwargs):
