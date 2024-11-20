@@ -68,6 +68,9 @@ class Application(AppModelMixin):
     clean_time = models.IntegerField(verbose_name="清理时间", default=180)
     file_upload_enable = models.BooleanField(verbose_name="文件上传是否启用", default=False)
     file_upload_setting = models.JSONField(verbose_name="文件上传相关设置", default={})
+    reranker_model_id = models.UUIDField(max_length=128, verbose_name="重排模型id", default=None)
+    is_retrieval_open = models.BooleanField(verbose_name="是否开启上下文检索", default=1)
+    retrieval_num = models.IntegerField(verbose_name="上下文检索文档数量", default=1)
 
 
     @staticmethod

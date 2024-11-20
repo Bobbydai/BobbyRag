@@ -69,7 +69,7 @@ def event_content(response,
         for chunk in response:
             all_text += chunk.content
             if not first_chunk_yielded:
-                ttft = time.time() - start_time  # 计算 TTFT
+                ttft = time.time() - manage.context['start_time']  # 计算 TTFT
                 yield 'data: ' + json.dumps({
                     'chat_id': str(chat_id),
                     'id': str(chat_record_id),

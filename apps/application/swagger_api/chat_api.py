@@ -137,7 +137,13 @@ class ChatApi(ApiMixin):
                     'dataset_setting': ApplicationApi.DatasetSetting.get_request_body_api(),
                     'model_setting': ApplicationApi.ModelSetting.get_request_body_api(),
                     'problem_optimization': openapi.Schema(type=openapi.TYPE_BOOLEAN, title="问题优化",
-                                                           description="是否开启问题优化", default=True)
+                                                           description="是否开启问题优化", default=True),
+                    'reranker_model_id' : openapi.Schema(type=openapi.TYPE_STRING, title="重排模型id",
+                                                           description="重排模型id"),
+                    'is_retrieval_open' : openapi.Schema(type=openapi.TYPE_BOOLEAN, title="是否开启上下文检索",
+                                                           description="是否开启上下文检索", default=True),
+                    'retrieval_num' : openapi.Schema(type=openapi.TYPE_INTEGER, title="上下文检索行数",
+                                                           description="上下文检索行数", default=True)        
                 }
             )
 

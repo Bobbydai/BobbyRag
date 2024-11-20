@@ -200,6 +200,32 @@
                   class="w-full"
                 />
               </el-form-item>
+              <el-form-item>
+              <template #label>
+                <div class="flex-between">
+                  <div class="flex align-center">
+                    <span class="mr-4">检索上下文文档数</span>
+                      <el-tooltip
+                        effect="dark"
+                        content="开启后，每次命中文档时可以带上上下各n个文档，从而提高回答质量"
+                        placement="right"
+                       >
+                      <AppIcon iconName="app-warning" class="app-warning-icon"></AppIcon>
+                      </el-tooltip> 
+                  </div>
+                <el-switch size="small" v-model="applicationForm.is_retrieval_open" @change="retrievalEnabledChange"/>
+                </div>
+              </template>
+              <div v-show="applicationForm.is_retrieval_open">
+              <el-input-number
+                v-model="applicationForm.retrieval_num"
+                :min="0"
+                :value-on-clear="0"
+                controls-position="right"
+                class="w-full"
+              />
+              </div>
+              </el-form-item>
               <el-form-item
                 label="$t('views.application.applicationForm.form.relatedKnowledgeBase')"
               >
@@ -631,7 +657,9 @@ const applicationForm = ref<ApplicationFormType>({
   stt_model_enable: false,
   tts_model_enable: false,
   tts_type: 'BROWSER',
-  type: 'SIMPLE'
+  type: 'SIMPLE',
+  is_retrieval_open: false,
+  retrieval_num: 0
 })
 
 const rules = reactive<FormRules<ApplicationFormType>>({
@@ -830,6 +858,12 @@ function ttsModelEnableChange() {
 function sttModelEnableChange() {
   if (!applicationForm.value.stt_model_enable) {
     applicationForm.value.stt_model_id = ''
+  }
+}
+
+function retrievalEnabledChange() {
+  if (!applicationForm.value.is_retrieval_open) {
+    applicationForm.value.retrieval_num = 0
   }
 }
 

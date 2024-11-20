@@ -353,6 +353,10 @@ class ChatSerializers(serializers.Serializer):
         problem_optimization = serializers.BooleanField(required=True, error_messages=ErrMessage.boolean("问题补全"))
         # 模型相关设置
         model_params_setting = serializers.JSONField(required=False, error_messages=ErrMessage.dict("模型参数相关设置"))
+        
+        reranker_model_id = serializers.CharField(required=False, allow_null=True, allow_blank=True,error_messages=ErrMessage.uuid("重排模型id"))
+        is_retrieval_open = serializers.BooleanField(required=False, default=1,error_messages=ErrMessage.boolean("是否开启上下文检索"))
+        retrieval_num = serializers.IntegerField(required=False, default=1,error_messages=ErrMessage.integer("上下文检索行数")) 
 
         def is_valid(self, *, raise_exception=False):
             super().is_valid(raise_exception=True)
@@ -382,7 +386,10 @@ class ChatSerializers(serializers.Serializer):
                                       model_setting=self.data.get('model_setting'),
                                       problem_optimization=self.data.get('problem_optimization'),
                                       model_params_setting=self.data.get('model_params_setting'),
-                                      user_id=user_id)
+                                      user_id=user_id,
+                                      reranker_model_id=self.data.get('reranker_model_id'),
+                                      is_retrieval_open=self.data.get('is_retrieval_open'),
+                                      retrieval_num=self.data.get('retrieval_num'))
             chat_cache.set(chat_id,
                            ChatInfo(chat_id, dataset_id_list,
                                     [str(document.id) for document in

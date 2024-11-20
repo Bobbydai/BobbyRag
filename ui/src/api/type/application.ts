@@ -21,6 +21,8 @@ interface ApplicationFormType {
   stt_model_enable?: boolean
   tts_model_enable?: boolean
   tts_type?: string
+  is_retrieval_open?: boolean
+  retrieval_num?: number
 }
 interface chatType {
   id: string

@@ -44,7 +44,9 @@ class ISearchDatasetStep(IBaseChatPipelineStep):
                                       message="类型只支持register|reset_password", code=500)
         ], error_messages=ErrMessage.char("检索模式"))
         user_id = serializers.UUIDField(required=True, error_messages=ErrMessage.uuid("用户id"))
-
+        reranker_model_id = serializers.UUIDField(required=True, error_messages=ErrMessage.uuid("重排模型id"))
+        is_retrieval_open = serializers.BooleanField(required=True, error_messages=ErrMessage.boolean("是否开启检索上下文"))
+        retrieval_num = serializers.IntegerField(required=True, error_messages=ErrMessage.integer("检索上下文数量"))
     def get_step_serializer(self, manage: PipelineManage) -> Type[InstanceSerializer]:
         return self.InstanceSerializer
 

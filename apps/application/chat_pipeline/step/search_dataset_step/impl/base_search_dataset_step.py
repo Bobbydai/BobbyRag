@@ -47,7 +47,7 @@ def get_embedding_id(dataset_id_list):
 
 class BaseSearchDatasetStep(ISearchDatasetStep):
 
-    def execute(self, problem_text: str, dataset_id_list: list[str], exclude_document_id_list: list[str],
+    def execute(self,reranker_model_id: str, is_retrieval_open: bool, retrieval_num: int, problem_text: str, dataset_id_list: list[str], exclude_document_id_list: list[str],
                 exclude_paragraph_id_list: list[str], top_n: int, similarity: float, padding_problem_text: str = None,
                 search_mode: str = None,
                 user_id=None,
@@ -67,20 +67,21 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
             return []
         paragraph_list = self.list_paragraph(embedding_list, vector)
         
-        # paragraph_list=merge_paragraphs(paragraph_list,1)
-
-        rerank_model_id='728583d2-a188-11ef-abd3-26cf8447a8c9'
+        # 取检索文档上下各N段文档做合并
+        if is_retrieval_open:
+            paragraph_list = merge_paragraphs(paragraph_list, retrieval_num)
         
-        # reranker_model = get_model_instance_by_model_user_id('rerank_model_id',user_id) 
         # 这样获取模型实例用python main.py start 起服务会直接挂，还没深入研究，感觉不搭嘎。。。
+        # reranker_model = get_model_instance_by_model_user_id('rerank_model_id',user_id) 
         
-        reranker_model = get_model_by_id(rerank_model_id,user_id)
-        reranker_model = ModelManage.get_model(rerank_model_id, lambda _id: get_model(reranker_model))
+        
+        reranker_model = get_model_by_id(reranker_model_id,user_id)
+        reranker_model = ModelManage.get_model(reranker_model_id, lambda _id: get_model(reranker_model))
         
         documents=[Document(row.get('content')) for row in paragraph_list]
+        reranker_model.top_n=len(documents)
         
         start_time=time.time()
-        
         rerank_results = reranker_model.compress_documents(
             documents,
             exec_problem_text)
@@ -101,10 +102,10 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
 
     @staticmethod
     def reset_paragraph(paragraph: Dict, embedding_list: List) -> ParagraphPipelineModel:
-        filter_embedding_list = [embedding for embedding in embedding_list if
-                                 str(embedding.get('paragraph_id')) == str(paragraph.get('id'))]
-        if filter_embedding_list is not None and len(filter_embedding_list) > 0:
-            find_embedding = filter_embedding_list[-1]
+        # filter_embedding_list = [embedding for embedding in embedding_list if
+        #                          str(embedding.get('paragraph_id')) == str(paragraph.get('id'))]
+        # if filter_embedding_list is not None and len(filter_embedding_list) > 0:
+        #     find_embedding = filter_embedding_list[-1]
             return (ParagraphPipelineModel.builder()
                     .add_paragraph(paragraph)
                     .add_similarity(paragraph.get('similarity'))
@@ -168,6 +169,7 @@ class BaseSearchDatasetStep(ISearchDatasetStep):
         }
 def merge_paragraphs(paragraph_list, num_paragraphs=1):
     processed_paragraphs = set()
+    chunk_ids_to_fetch = set()
 
     # 遍历每个初始段落，查找并合并相邻段落的内容
     for paragraph in paragraph_list:
@@ -175,6 +177,7 @@ def merge_paragraphs(paragraph_list, num_paragraphs=1):
         if document_sort_id:
             processed_paragraphs.add(document_sort_id)
 
+   # 遍历每个初始段落，查找并记录需要查询的chunk_id
     for paragraph in paragraph_list:
         document_sort_id = paragraph.get('document_sort_id')
         document_id = paragraph.get('document_id')
@@ -183,20 +186,29 @@ def merge_paragraphs(paragraph_list, num_paragraphs=1):
             if match:
                 chunk_number = int(match.group(1))
 
-                # 查找前几个段落
+                # 记录前几个段落的chunk_id
                 for i in range(1, num_paragraphs + 1):
                     prev_chunk_id = f"{document_id}_{chunk_number - i}"
-                    prev_paragraph = Paragraph.objects.filter(document_sort_id=prev_chunk_id, document_id=document_id).first()
-                    if prev_paragraph and prev_paragraph.document_sort_id not in processed_paragraphs:
-                        paragraph['content'] = f"{prev_paragraph.content}\n{paragraph['content']}"
-                        processed_paragraphs.add(prev_paragraph.document_sort_id)
+                    if prev_chunk_id not in processed_paragraphs:
+                        chunk_ids_to_fetch.add(prev_chunk_id)
 
-                # 查找后几个段落
+                # 记录后几个段落的chunk_id
                 for i in range(1, num_paragraphs + 1):
                     next_chunk_id = f"{document_id}_{chunk_number + i}"
-                    next_paragraph = Paragraph.objects.filter(document_sort_id=next_chunk_id, document_id=document_id).first()
-                    if next_paragraph and next_paragraph.document_sort_id not in processed_paragraphs:
-                        paragraph['content'] += f"\n{next_paragraph.content}"
-                        processed_paragraphs.add(next_paragraph.document_sort_id)
+                    if next_chunk_id not in processed_paragraphs:
+                        chunk_ids_to_fetch.add(next_chunk_id)
 
-    return paragraph_list
+    # 一次性查询所有需要的段落
+    # paragraphs_to_add = Paragraph.objects.filter(
+    #     document_sort_id__in=chunk_ids_to_fetch,
+    #     document_id__in=[p['document_id'] for p in paragraph_list]
+    # ).values()
+
+    paragraphs_to_add = native_search(QuerySet(Paragraph).filter(document_sort_id__in=chunk_ids_to_fetch),
+                                       get_file_content(
+                                           os.path.join(PROJECT_DIR, "apps", "application", 'sql',
+                                                        'list_dataset_paragraph_by_paragraph_id.sql')),
+                                       with_table_name=True)    
+    # paragraphs_to_add = list(paragraphs_to_add)
+                 
+    return paragraph_list+paragraphs_to_add
