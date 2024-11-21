@@ -71,6 +71,8 @@ class Application(AppModelMixin):
     reranker_model_id = models.UUIDField(max_length=128, verbose_name="重排模型id", default=None)
     is_retrieval_open = models.BooleanField(verbose_name="是否开启上下文检索", default=1)
     retrieval_num = models.IntegerField(verbose_name="上下文检索文档数量", default=1)
+    problem_optimization_model_id = models.UUIDField(max_length=128, verbose_name="问题优化模型id", default=None)
+    problem_optimization_params = models.JSONField(verbose_name="问题优化模型参数相关设置", default={})
 
 
     @staticmethod

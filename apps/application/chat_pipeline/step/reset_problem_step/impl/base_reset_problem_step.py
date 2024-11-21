@@ -22,18 +22,18 @@ prompt = (
 
 
 class BaseResetProblemStep(IResetProblemStep):
-    def execute(self, problem_text: str, history_chat_record: List[ChatRecord] = None, model_id: str = None,
+    def execute(self, problem_text: str, history_chat_record: List[ChatRecord] = None, problem_optimization_model_id: str = None,
                 problem_optimization_prompt=None,
                 user_id=None,
                 **kwargs) -> str:
-        chat_model = get_model_instance_by_model_user_id(model_id, user_id) if model_id is not None else None
+        chat_model = get_model_instance_by_model_user_id(problem_optimization_model_id, user_id) if problem_optimization_model_id is not None else None
         start_index = len(history_chat_record) - 3
         history_message = [[history_chat_record[index].get_human_message(), history_chat_record[index].get_ai_message()]
                            for index in
                            range(start_index if start_index > 0 else 0, len(history_chat_record))]
-        # reset_prompt = problem_optimization_prompt if problem_optimization_prompt else prompt
-        reset_prompt=prompt
+        reset_prompt = problem_optimization_prompt if problem_optimization_prompt else prompt
         message_list = [HumanMessage(content=reset_prompt.replace('{question}', problem_text).replace('{context}', str(history_message)))]
+        print("问题优化:", message_list)
         response = chat_model.invoke(message_list)
         padding_problem = problem_text
         if response.content.__contains__("<data>") and response.content.__contains__('</data>'):

@@ -357,7 +357,10 @@ class ChatSerializers(serializers.Serializer):
         reranker_model_id = serializers.CharField(required=False, allow_null=True, allow_blank=True,error_messages=ErrMessage.uuid("重排模型id"))
         is_retrieval_open = serializers.BooleanField(required=False, default=1,error_messages=ErrMessage.boolean("是否开启上下文检索"))
         retrieval_num = serializers.IntegerField(required=False, default=1,error_messages=ErrMessage.integer("上下文检索行数")) 
-
+        problem_optimization_prompt = serializers.CharField(required=False, allow_null=True, allow_blank=True,
+                                                           max_length=102400,
+                                                           error_messages=ErrMessage.char("问题补全提示词"))
+        
         def is_valid(self, *, raise_exception=False):
             super().is_valid(raise_exception=True)
             user_id = self.get_user_id()
@@ -381,7 +384,9 @@ class ChatSerializers(serializers.Serializer):
             dataset_id_list = self.data.get('dataset_id_list')
             dialogue_number = 3 if self.data.get('multiple_rounds_dialogue', False) else 0
             valid_model_params_setting(model_id, self.data.get('model_params_setting'))
-            application = Application(id=None, dialogue_number=dialogue_number, model_id=model_id,
+            
+            data_application = QuerySet(Application).filter(id=self.data.get('id')).first()
+            application = Application(id=self.data.get('id'), dialogue_number=dialogue_number, model_id=model_id,
                                       dataset_setting=self.data.get('dataset_setting'),
                                       model_setting=self.data.get('model_setting'),
                                       problem_optimization=self.data.get('problem_optimization'),
@@ -389,7 +394,11 @@ class ChatSerializers(serializers.Serializer):
                                       user_id=user_id,
                                       reranker_model_id=self.data.get('reranker_model_id'),
                                       is_retrieval_open=self.data.get('is_retrieval_open'),
-                                      retrieval_num=self.data.get('retrieval_num'))
+                                      retrieval_num=self.data.get('retrieval_num'),
+                                      problem_optimization_prompt=self.data.get('problem_optimization_prompt'),
+                                      problem_optimization_model_id=data_application.problem_optimization_model_id,
+                                      problem_optimization_params=data_application.problem_optimization_params
+                                      )
             chat_cache.set(chat_id,
                            ChatInfo(chat_id, dataset_id_list,
                                     [str(document.id) for document in

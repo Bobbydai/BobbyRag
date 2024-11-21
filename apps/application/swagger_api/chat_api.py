@@ -143,7 +143,9 @@ class ChatApi(ApiMixin):
                     'is_retrieval_open' : openapi.Schema(type=openapi.TYPE_BOOLEAN, title="是否开启上下文检索",
                                                            description="是否开启上下文检索", default=True),
                     'retrieval_num' : openapi.Schema(type=openapi.TYPE_INTEGER, title="上下文检索行数",
-                                                           description="上下文检索行数", default=True)        
+                                                           description="上下文检索行数", default=True),
+                    'problem_optimization_prompt' : openapi.Schema(type=openapi.TYPE_STRING, title="问题优化prompt",
+                                                           description="问题优化prompt"),    
                 }
             )
 

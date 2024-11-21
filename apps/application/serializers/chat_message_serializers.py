@@ -109,7 +109,9 @@ class ChatInfo:
             'user_id': self.application.user_id,
             'reranker_model_id': self.application.reranker_model_id,
             'is_retrieval_open': self.application.is_retrieval_open,
-            'retrieval_num': self.application.retrieval_num
+            'retrieval_num': self.application.retrieval_num,
+            'problem_optimization_model_id': self.application.problem_optimization_model_id,
+            'promblem_optimization_params': self.application.problem_optimization_params,
         }
 
     def to_pipeline_manage_params(self, problem_text: str, post_response_handler: PostResponseHandler,
