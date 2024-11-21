@@ -23,10 +23,10 @@ prompt = (
 
 class BaseResetProblemStep(IResetProblemStep):
     def execute(self, problem_text: str, history_chat_record: List[ChatRecord] = None, problem_optimization_model_id: str = None,
-                problem_optimization_prompt=None,
+                problem_optimization_prompt=None, problem_optimization_params=None,
                 user_id=None,
                 **kwargs) -> str:
-        chat_model = get_model_instance_by_model_user_id(problem_optimization_model_id, user_id) if problem_optimization_model_id is not None else None
+        chat_model = get_model_instance_by_model_user_id(problem_optimization_model_id, user_id,**problem_optimization_params) if problem_optimization_model_id is not None else None
         start_index = len(history_chat_record) - 3
         history_message = [[history_chat_record[index].get_human_message(), history_chat_record[index].get_ai_message()]
                            for index in
