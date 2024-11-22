@@ -70,13 +70,15 @@ def event_content(response,
             all_text += chunk.content
             if not first_chunk_yielded:
                 ttft = time.time() - manage.context['start_time']  # 计算 TTFT
+                t3 = time.time() - start_time
                 yield 'data: ' + json.dumps({
                     'chat_id': str(chat_id),
                     'id': str(chat_record_id),
                     'operate': True,
                     'content': chunk.content,
                     'is_end': False,
-                    'ttft': ttft  # 包含 TTFT
+                    'ttft': ttft,  # 包含 TTFT
+                    't3': t3
                 }) + "\n\n"
                 first_chunk_yielded = True
             yield manage.get_base_to_response().to_stream_chunk_response(chat_id, str(chat_record_id), chunk.content,

@@ -7,7 +7,8 @@
       引用分段 {{ data.paragraph_list?.length || 0 }}</el-button
     >
     <!-- 添加ttft的样式 -->
-    <span v-if="data.ttft" class="mr-4 color-secondary">TTFT: {{ data.ttft }}</span>
+    <span v-if="data.ttft" class="mr-4 color-secondary">TTFT: {{ data.ttft.toFixed(3) }}</span>
+    <span v-if="data.t3" class="mr-4 color-secondary">T3: {{ data.t3.toFixed(3) }}</span>
   </div>
   <div class="mt-8" v-if="!isWorkFlow(props.type)">
     <el-space wrap>

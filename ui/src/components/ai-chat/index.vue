@@ -749,6 +749,9 @@ const getWrite = (chat: any, reader: any, stream: boolean) => {
             if (chunk.ttft !== undefined) {
               chat.ttft = chunk.ttft
             }
+            if (chunk.t3 !== undefined) {
+              chat.t3 = chunk.t3
+            }
             if (chunk.is_end) {
               // 流处理成功 返回成功回调
               return Promise.resolve()
