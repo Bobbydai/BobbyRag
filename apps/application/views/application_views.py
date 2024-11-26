@@ -15,7 +15,7 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.request import Request
 from rest_framework.views import APIView
 
-from application.serializers.application_serializers import ApplicationSerializer
+from application.serializers.application_serializers import ApplicationSerializer, ContentGenerateSerializer
 from application.serializers.application_statistics_serializers import ApplicationStatisticsSerializer
 from application.swagger_api.application_api import ApplicationApi
 from application.swagger_api.application_statistics_api import ApplicationStatisticsApi
@@ -605,3 +605,19 @@ class Application(APIView):
                 data={'application_id': application_id, 'user_id': request.user.id}).play_demo_text(request.data)
             return HttpResponse(byte_data, status=200, headers={'Content-Type': 'audio/mp3',
                                                                 'Content-Disposition': 'attachment; filename="abc.mp3"'})
+
+    # 这个文案生成接口不需要token权限认证
+    class ContentGenerate(APIView):
+        # authentication_classes = [TokenAuth]
+
+        @action(methods=['POST'], detail=False)
+        # @has_permissions(
+        #     ViewPermission([RoleConstants.ADMIN, RoleConstants.USER, RoleConstants.APPLICATION_ACCESS_TOKEN],
+        #                    [lambda r, keywords: Permission(group=Group.APPLICATION,
+        #                                                    operate=Operate.USE,
+        #                                                    dynamic_tag=keywords.get(
+        #                                                        'application_id'))],
+        #                    compare=CompareConstants.AND))
+        def post(self, request: Request, application_id: str):
+            return result.success(ContentGenerateSerializer.Operate(
+                    data={'application_id': application_id}).content_generate(request.data))

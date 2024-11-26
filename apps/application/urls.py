@@ -78,6 +78,7 @@ urlpatterns = [
     path('application/<str:application_id>/work_flow_version/<str:work_flow_version_id>',
          views.ApplicationVersionView.Operate.as_view()),
     path('application/<str:application_id>/play_demo_text', views.Application.PlayDemoText.as_view(),
-         name='application/audio')
-
+         name='application/audio'),
+    path('application/<str:application_id>/content_generate', views.Application.ContentGenerate.as_view(),
+         name='application/content_generate')
 ]

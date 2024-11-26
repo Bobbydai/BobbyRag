@@ -29,7 +29,7 @@ from application.models import Application, ApplicationDatasetMapping, Applicati
 from application.models.api_key_model import ApplicationAccessToken, ApplicationApiKey
 from common.cache_data.application_access_token_cache import get_application_access_token, del_application_access_token
 from common.cache_data.application_api_key_cache import del_application_api_key, get_application_api_key
-from common.config.embedding_config import VectorStore
+from common.config.embedding_config import ModelManage, VectorStore
 from common.constants.authentication_type import AuthenticationType
 from common.db.search import get_dynamics_model, native_search, native_page_search
 from common.db.sql_execute import select_list
@@ -43,10 +43,11 @@ from dataset.models import DataSet, Document, Image
 from dataset.serializers.common_serializers import list_paragraph, get_embedding_model_by_dataset_id_list
 from embedding.models import SearchMode
 from function_lib.serializers.function_lib_serializer import FunctionLibSerializer
+from prompt.live_stream_script import LiveStreamScriptGenerator
 from setting.models import AuthOperate
 from setting.models.model_management import Model
-from setting.models_provider import get_model_credential
-from setting.models_provider.tools import get_model_instance_by_model_user_id
+from setting.models_provider import get_model, get_model_credential
+from setting.models_provider.tools import get_model_by_id, get_model_instance_by_model_user_id
 from setting.serializers.provider_serializers import ModelSerializer
 from smartdoc.conf import PROJECT_DIR
 from users.models import User
@@ -1075,3 +1076,93 @@ class ApplicationSerializer(serializers.Serializer):
                 application_api_key.save()
                 # 写入缓存
                 get_application_api_key(application_api_key.secret_key, False)
+
+
+
+class ContentGenerateSerializer(serializers.Serializer):
+    goods_name = serializers.CharField(required=True, max_length=64, min_length=1, error_messages=ErrMessage.char("商品名称"))
+    goods_point = serializers.CharField(required=False, allow_null=True, allow_blank=True,
+                                         max_length=256, min_length=1,
+                                         error_messages=ErrMessage.char("商品卖点"))
+    activity = serializers.CharField(required=False, allow_null=True, allow_blank=True,
+                                      max_length=256, min_length=1,
+                                      error_messages=ErrMessage.char("参与营销节点"))
+    benefit = serializers.CharField(required=False, allow_null=True, allow_blank=True,
+                                     max_length=256, min_length=1,
+                                     error_messages=ErrMessage.char("优惠福利"))
+    target_people = serializers.CharField(required=False, allow_null=True, allow_blank=True,
+                                            max_length=256, min_length=1,
+                                            error_messages=ErrMessage.char("适用人群"))
+    user_point = serializers.CharField(required=False, allow_null=True, allow_blank=True,
+                                         max_length=256, min_length=1,
+                                         error_messages=ErrMessage.char("用户痛点"))
+
+    class Operate(serializers.Serializer):
+        application_id = serializers.UUIDField(required=True, error_messages=ErrMessage.uuid("应用id"))
+        def content_generate(self, form_data, with_valid=True):
+            if with_valid:
+                self.is_valid(raise_exception=True)
+
+            # 提取所需参数
+            goods_name = form_data.get('goods_name')
+            goods_point = form_data.get('goods_point')
+            activity = form_data.get('activity')
+            benefit = form_data.get('benefit')
+            target_people = form_data.get('target_people')
+            user_point = form_data.get('user_point')
+            application = QuerySet(Application).filter(id=self.data['application_id']).first()
+            model = get_model_by_id(application.model_id,"")
+            chat_model= ModelManage.get_model(application.model_id, lambda _id: get_model(model))
+            def parse_script_content(content):
+                pattern = re.compile(r'<paragraph>\s*<title>(.*?)</title>\s*<content>(.*?)</content>\s*</paragraph>', re.DOTALL)
+                matches = pattern.findall(content)
+    
+                result = []
+                for title, content in matches:
+                    result.append({
+                        'title': title.strip(),
+                        'content': content.strip()
+                    })
+    
+                return result
+            def parse_evalution_content(content):
+                pattern = re.compile(r'<paragraph>\s*<title>(.*?)</title>\s*<tag>(.*?)</tag>\s*<content>(.*?)</content>\s*</paragraph>', re.DOTALL)
+                matches = pattern.findall(content)
+    
+                result = []
+                for title, tag, content in matches:
+                    result.append({
+                        'title': title.strip(),
+                        'tag': tag.strip(),
+                        'content': content.strip()
+                    })
+    
+                return result
+            # 生成脚本
+            generator = LiveStreamScriptGenerator(chat_model)
+            final_script, evaluation_result = generator.generate_script(goods_name, goods_point, activity, benefit, target_people, user_point)
+            parsed_final_script = parse_script_content(final_script)
+            parsed_evaluation_result = parse_evalution_content(evaluation_result)
+            # 合并结果
+            combined_result = {
+                "contents": []
+            }
+
+            for script_item in parsed_final_script:
+                combined_result["contents"].append({
+                    "title": script_item['title'],
+                    "content": script_item['content'],
+                    "rank": len(combined_result["contents"]) + 1,
+                    "tags": []
+                })
+
+            for eval_item in parsed_evaluation_result:
+                matching_script_item = next((item for item in combined_result["contents"] if item['title'] == eval_item['title']), None)
+                if matching_script_item:
+                    matching_script_item['tags'].append({
+                        "name": eval_item['tag'],
+                        "tag_contents": [eval_item['content']]
+                    })
+
+            return combined_result
+        
