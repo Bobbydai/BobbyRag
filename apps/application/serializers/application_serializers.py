@@ -1096,7 +1096,8 @@ class ContentGenerateSerializer(serializers.Serializer):
     user_point = serializers.CharField(required=False, allow_null=True, allow_blank=True,
                                          max_length=256, min_length=1,
                                          error_messages=ErrMessage.char("用户痛点"))
-
+    style = serializers.IntegerField(required=False, allow_null=True,
+                                        error_messages=ErrMessage.char("脚本风格"))
     class Operate(serializers.Serializer):
         application_id = serializers.UUIDField(required=True, error_messages=ErrMessage.uuid("应用id"))
         def content_generate(self, form_data, with_valid=True):
@@ -1110,6 +1111,7 @@ class ContentGenerateSerializer(serializers.Serializer):
             benefit = form_data.get('benefit')
             target_people = form_data.get('target_people')
             user_point = form_data.get('user_point')
+            style = form_data.get('style')
             application = QuerySet(Application).filter(id=self.data['application_id']).first()
             model = get_model_by_id(application.model_id,"")
             chat_model= ModelManage.get_model(application.model_id, lambda _id: get_model(model))
@@ -1140,7 +1142,7 @@ class ContentGenerateSerializer(serializers.Serializer):
                 return result
             # 生成脚本
             generator = LiveStreamScriptGenerator(chat_model)
-            final_script, evaluation_result = generator.generate_script(goods_name, goods_point, activity, benefit, target_people, user_point)
+            final_script, evaluation_result = generator.generate_script(goods_name, goods_point, activity, benefit, target_people, user_point, style)
             parsed_final_script = parse_script_content(final_script)
             parsed_evaluation_result = parse_evalution_content(evaluation_result)
             # 合并结果
