@@ -1142,9 +1142,10 @@ class ContentGenerateSerializer(serializers.Serializer):
                 return result
             # 生成脚本
             generator = LiveStreamScriptGenerator(chat_model)
-            final_script, evaluation_result = generator.generate_script(goods_name, goods_point, activity, benefit, target_people, user_point, style)
+            final_script, evaluation_result,continuity_phrases = generator.generate_script(goods_name, goods_point, activity, benefit, target_people, user_point, style)
             parsed_final_script = parse_script_content(final_script)
             parsed_evaluation_result = parse_evalution_content(evaluation_result)
+            parsed_continuity_parses = parse_script_content(continuity_phrases)
             # 合并结果
             combined_result = {
                 "contents": []
@@ -1155,7 +1156,8 @@ class ContentGenerateSerializer(serializers.Serializer):
                     "title": script_item['title'],
                     "content": script_item['content'],
                     "rank": len(combined_result["contents"]) + 1,
-                    "tags": []
+                    "tags": [],
+                    "continuity_sentences": "",
                 })
 
             for eval_item in parsed_evaluation_result:
@@ -1165,6 +1167,8 @@ class ContentGenerateSerializer(serializers.Serializer):
                         "name": eval_item['tag'],
                         "tag_contents": [eval_item['content']]
                     })
-
+            for i, script_item in enumerate(combined_result["contents"]):
+                if i < len(parsed_continuity_parses):
+                    script_item['continuity_sentences']=parsed_continuity_parses[i]
             return combined_result
         

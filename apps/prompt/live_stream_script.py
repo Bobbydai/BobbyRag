@@ -136,7 +136,7 @@ class LiveStreamScriptGenerator:
         show_product_points_content,
         introduce_activity_content,
         introduce_target_people_content,
-        script_style
+        script_style,
     ):
         prompt = f"""
         角色与能力：你是一位电商卖货领域的直播间脚本写手
@@ -181,14 +181,52 @@ class LiveStreamScriptGenerator:
         <content>618大促来啦！在这个春季焕新的活动中，买二送一、拍一发三，更有满100减10元的超值优惠！</content>
         </paragraph>
         """
-        max_kb.info(f"分析提示词:{prompt}")
+        message_list = [HumanMessage(content=prompt)]
+        result = self.llm.invoke(message_list)
+        return result.content
+
+    def continuity_phrases(self, final_script):
+        prompt = f"""
+        角色与能力：你是一位电商卖货领域的直播间脚本的连贯高手
+        背景信息：
+        - 直播脚本内容：
+        {final_script}
+        指令：你需要以背景信息中的直播脚本内容为基础，假如播放完每一段内容后需要回答用户问题，问答完之后需要有一到两句连贯的话用于引出下面的段落，请你给每两段之间都生成一至两句连贯的话
+        输出风格：跟直播脚本内容风格保持一致
+        要求：只输出两段之间连贯的话，不需要带上原先的脚本内容，每输出一组连贯的话，请把这段话上文的标题和连贯的句子要放在<paragraph></paragraph>标签中，其中标题放在<title></title>标签中，连贯句子放在<content></content>。
+        输出样例：
+        <paragraph>
+        <title>商品讲解</title>
+        <content>现在，让我们回到刚才的话题，继续为您详细介绍。</content>
+        </paragraph>
+        """
+
+        message_list = [HumanMessage(content=prompt)]
+        result = self.llm.invoke(message_list)
+        return result.content
+
+    def generate_ssml(self, text):
+        prompt = f"""
+        角色与能力：你是一位电商卖货领域的直播间脚本写手
+        背景信息：
+        - 口播文案：{text}
+        指令：你需要给背景信息中的口播文案中<content></content>标签里的文案内容适当的加上一些ssml标签，使其更符合语音播报，直播带货的要求，直播效果更好。
+        输出格式 ：口播文案输入的内容和框架格式不变，仅在<content></content>标签里做ssml标签的修改，其他内容不用动。
+        """
 
         message_list = [HumanMessage(content=prompt)]
         result = self.llm.invoke(message_list)
         return result.content
 
     def generate_script(
-        self, goods_name, goods_point, activity, benefit, target_people, user_point, style
+        self,
+        goods_name,
+        goods_point,
+        activity,
+        benefit,
+        target_people,
+        user_point,
+        style,
     ):
         introduce_products_content = self.introduce_products(goods_name, goods_point)
         max_kb.info(f"介绍商品提示词:{introduce_products_content}")
@@ -216,13 +254,25 @@ class LiveStreamScriptGenerator:
             show_product_points_content,
             introduce_activity_content,
             introduce_target_people_content,
-            script_style
+            script_style,
         )
         max_kb.info(f"总结提示词:{summary_prompt}")
         message_list = [HumanMessage(content=summary_prompt)]
         final_script = self.llm.invoke(message_list).content
         max_kb.info(f"最终脚本:{final_script}")
 
+        continuity_phrases = self.continuity_phrases(final_script)
+        max_kb.info(f"连贯句子:{continuity_phrases}")
+
         evaluation_result = self.evaluate_script(final_script)
         max_kb.info(f"分析结果:{evaluation_result}")
-        return final_script, evaluation_result
+
+        # 生成最终脚本的 SSML
+        final_script_ssml = self.generate_ssml(final_script)
+        max_kb.info(f"最终脚本 SSML:{final_script_ssml}")
+
+        # 生成连贯句子的 SSML
+        continuity_phrases_ssml = self.generate_ssml(continuity_phrases)
+        max_kb.info(f"连贯句子 SSML:{continuity_phrases_ssml}")
+
+        return final_script_ssml, evaluation_result, continuity_phrases_ssml
