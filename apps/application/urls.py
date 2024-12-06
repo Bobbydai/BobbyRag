@@ -80,5 +80,7 @@ urlpatterns = [
     path('application/<str:application_id>/play_demo_text', views.Application.PlayDemoText.as_view(),
          name='application/audio'),
     path('application/<str:application_id>/content_generate', views.Application.ContentGenerate.as_view(),
-         name='application/content_generate')
+         name='application/content_generate'),
+    path('application/<str:application_id>/choose_comment', views.Application.ChooseComment.as_view(),
+         name='application/choose_comment')
 ]

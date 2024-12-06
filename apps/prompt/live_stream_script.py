@@ -207,7 +207,7 @@ class LiveStreamScriptGenerator:
 
     def generate_ssml(self, text):
         prompt = f"""
-        角色与能力：你是一位电商卖货领域的直播间脚本写手
+        角色与能力：你是一位电商卖货领域的直播间脚本写手  
         背景信息：
         - 口播文案：{text}
         指令：你需要给背景信息中的口播文案中<content></content>标签里的文案内容适当的加上一些ssml标签，使其更符合语音播报，直播带货的要求，直播效果更好。
@@ -218,6 +218,23 @@ class LiveStreamScriptGenerator:
         result = self.llm.invoke(message_list)
         return result.content
 
+    def generate_comments(self, comments,choose_nums,goods_info):
+        prompt = f"""
+        角色与能力：你是一位电商卖货领域的直播间弹幕主播。
+        背景信息：
+        - 弹幕：{comments}
+        - 商品信息：{goods_info}
+        指令：你需要根据背景信息中的弹幕，挑选出至多{choose_nums}条与直播的商品信息的弹幕
+        输出格式 ：只输出挑选出来的弹幕，将每条弹幕都分别放在<content></content>中。
+        输出样例：
+        <content>这款鞋卖多少钱</content>
+        <content>这款鞋耐穿吗</content>
+        """
+
+        message_list = [HumanMessage(content=prompt)]
+        max_kb.info(f"弹幕提示词：{message_list}")
+        result = self.llm.invoke(message_list)
+        return result.content
     def generate_script(
         self,
         goods_name,
@@ -227,6 +244,7 @@ class LiveStreamScriptGenerator:
         target_people,
         user_point,
         style,
+        is_ssml_open,
     ):
         introduce_products_content = self.introduce_products(goods_name, goods_point)
         max_kb.info(f"介绍商品提示词:{introduce_products_content}")
@@ -267,12 +285,19 @@ class LiveStreamScriptGenerator:
         evaluation_result = self.evaluate_script(final_script)
         max_kb.info(f"分析结果:{evaluation_result}")
 
-        # 生成最终脚本的 SSML
-        final_script_ssml = self.generate_ssml(final_script)
-        max_kb.info(f"最终脚本 SSML:{final_script_ssml}")
+        if is_ssml_open:
+            # 生成最终脚本的 SSML
+            final_script_ssml = self.generate_ssml(final_script)
+            max_kb.info(f"最终脚本 SSML:{final_script_ssml}")
 
-        # 生成连贯句子的 SSML
-        continuity_phrases_ssml = self.generate_ssml(continuity_phrases)
-        max_kb.info(f"连贯句子 SSML:{continuity_phrases_ssml}")
+            # 生成连贯句子的 SSML
+            continuity_phrases_ssml = self.generate_ssml(continuity_phrases)
+            max_kb.info(f"连贯句子 SSML:{continuity_phrases_ssml}")
 
-        return final_script_ssml, evaluation_result, continuity_phrases_ssml
+            return final_script_ssml, evaluation_result, continuity_phrases_ssml
+        return final_script, evaluation_result, continuity_phrases
+
+    def generate_comment(self,comments,choose_num,goods_info):
+        comments_content = self.generate_comments(comments,choose_num,goods_info)
+        return comments_content
+
