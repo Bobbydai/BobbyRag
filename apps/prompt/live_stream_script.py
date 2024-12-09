@@ -224,7 +224,7 @@ class LiveStreamScriptGenerator:
         背景信息：
         - 弹幕：{comments}
         - 商品信息：{goods_info}
-        指令：你需要根据背景信息中的弹幕，挑选出至多{choose_nums}条与直播的商品信息的弹幕
+        指令：你需要根据背景信息中的弹幕，挑选出至多{choose_nums}条与直播的商品信息的弹幕，如果背景信息弹幕为空则输出空。
         输出格式 ：只输出挑选出来的弹幕，将每条弹幕都分别放在<content></content>中。
         输出样例：
         <content>这款鞋卖多少钱</content>
