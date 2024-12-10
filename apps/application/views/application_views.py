@@ -17,6 +17,7 @@ from rest_framework.views import APIView
 
 from application.serializers.application_serializers import (
     ApplicationSerializer,
+    BeautyCommentSerializer,
     ChooseCommentSerializer,
     ContentGenerateSerializer,
 )
@@ -1056,4 +1057,22 @@ class Application(APIView):
                 ChooseCommentSerializer.Operate(
                     data={"application_id": application_id}
                 ).choose_comment(request.data)
+            )
+
+    class BeautyComment(APIView):
+        # authentication_classes = [TokenAuth]
+
+        @action(methods=["POST"], detail=False)
+        # @has_permissions(
+        #     ViewPermission([RoleConstants.ADMIN, RoleConstants.USER, RoleConstants.APPLICATION_ACCESS_TOKEN],
+        #                    [lambda r, keywords: Permission(group=Group.APPLICATION,
+        #                                                    operate=Operate.USE,
+        #                                                    dynamic_tag=keywords.get(
+        #                                                        'application_id'))],
+        #                    compare=CompareConstants.AND))
+        def post(self, request: Request, application_id: str):
+            return result.success(
+                BeautyCommentSerializer.Operate(
+                    data={"application_id": application_id}
+                ).beauty_comment(request.data)
             )

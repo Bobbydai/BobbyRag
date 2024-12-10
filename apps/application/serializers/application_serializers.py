@@ -1992,3 +1992,61 @@ class ChooseCommentSerializer(serializers.Serializer):
                     )
 
                 return result
+
+
+class BeautyCommentSerializer(serializers.Serializer):
+    comments = serializers.ListField(
+        child=serializers.CharField(),
+        required=True,
+        error_messages=ErrMessage.char("弹幕评论"),
+    )
+
+    choose_num = (
+        serializers.IntegerField(
+            required=False, allow_null=True, error_messages=ErrMessage.char("选择个数")
+        ),
+    )
+
+    goods_info = serializers.CharField(
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+        max_length=256,
+        min_length=1,
+        error_messages=ErrMessage.char("商品信息"),
+    )
+
+    class Operate(serializers.Serializer):
+        application_id = serializers.UUIDField(
+            required=True, error_messages=ErrMessage.uuid("应用id")
+        )
+
+        def beauty_comment(self, form_data, with_valid=True):
+            if with_valid:
+                self.is_valid(raise_exception=True)
+                style = form_data.get("style")
+                question = form_data.get("question")
+                answer = form_data.get("answer")
+                paragraph_now = form_data.get("paragraph_now")
+                #后续可以把口播文案中生成连贯句子的逻辑移到这里一起生成，效果可能会更好.
+                # paragraph_next = form_data.get("paragraph_next")
+
+                application = (
+                    QuerySet(Application).filter(id=self.data["application_id"]).first()
+                )
+                model = get_model_by_id(application.model_id, "")
+                chat_model = ModelManage.get_model(
+                    application.model_id, lambda _id: get_model(model)
+                )
+                generator = LiveStreamScriptGenerator(chat_model)
+                beauty_comment = generator.beauty_comment(style, question, answer, paragraph_now)
+                pattern = re.compile(
+                    r"<data>(.*?)</data>",
+                    re.DOTALL,
+                )
+                matches = pattern.findall(beauty_comment)
+                result={
+                    "content": matches[0].strip(),
+                    }
+                    
+                return result

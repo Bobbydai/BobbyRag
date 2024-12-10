@@ -232,7 +232,24 @@ class LiveStreamScriptGenerator:
         """
 
         message_list = [HumanMessage(content=prompt)]
-        max_kb.info(f"弹幕提示词：{message_list}")
+        result = self.llm.invoke(message_list)
+        return result.content
+    
+    def beauty_comments(self, script_style, question, answer, paragraph_now):
+        prompt = f"""
+        角色与能力：你是一位电商卖货领域的直播主播。
+        背景信息：
+        - 弹幕问题：{question}
+        - 答案：{answer}
+        - 当前段落：{paragraph_now}
+        直播风格：请模仿下面这篇段落的风格：
+        {script_style}
+        指令：假设你现在在直播，当介绍完当前商品的段落之后你需要对弹幕进行回答，现在请你结合背景信息中的观众问题对答案进行润色，并使其背景信息中的当前段落语义连贯。
+        输出格式 ：将润色后的回答内容放在<data></data>中。
+        """
+
+        message_list = [HumanMessage(content=prompt)]
+        max_kb.info(f"润色回答提示词{message_list}")
         result = self.llm.invoke(message_list)
         return result.content
     def generate_script(
@@ -301,3 +318,11 @@ class LiveStreamScriptGenerator:
         comments_content = self.generate_comments(comments,choose_num,goods_info)
         return comments_content
 
+    def beauty_comment(self,style, question, answer, paragraph_now):
+        script_style = self.normal_style
+        if style == 2:
+            script_style = self.dong_style
+        if style == 3:
+            script_style = self.jiaqi_style
+        comments_content = self.beauty_comments(script_style, question, answer, paragraph_now)
+        return comments_content

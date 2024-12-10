@@ -241,17 +241,17 @@ class BaseChatStep(IChatStep):
                                                             no_references_setting, problem_text)
             if is_ai_chat:
                 request_token = chat_model.get_num_tokens_from_messages(message_list)
-                response_token = chat_model.get_num_tokens(chat_result.content)
+                # response_token = chat_model.get_num_tokens(chat_result.content)
             else:
                 request_token = 0
-                response_token = 0
-            write_context(self, manage, request_token, response_token, chat_result.content)
+                # response_token = 0
+            write_context(self, manage, request_token, 0, chat_result.content)
             post_response_handler.handler(chat_id, chat_record_id, paragraph_list, problem_text,
                                           chat_result.content, manage, self, padding_problem_text, client_id)
             add_access_num(client_id, client_type)
             return manage.get_base_to_response().to_block_response(str(chat_id), str(chat_record_id),
                                                                    chat_result.content, True,
-                                                                   request_token, response_token)
+                                                                   request_token, 0)
         except Exception as e:
             all_text = '异常' + str(e)
             write_context(self, manage, 0, 0, all_text)
