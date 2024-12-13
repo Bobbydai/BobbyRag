@@ -22,3 +22,18 @@ class TokenizerManage:
                 resume_download=False,
                 force_download=False)
         return TokenizerManage.tokenizer
+
+
+# # 获取 tokenizer 实例
+# tokenizer = TokenizerManage.get_tokenizer()
+
+# # 测试 tokenizer 功能
+# text = "Hello, how are you?"
+# tokens = tokenizer.tokenize(text)
+# print("Tokens:", tokens)
+
+# # 编码和解码测试
+# encoded_input = tokenizer.encode(text, return_tensors='pt')
+# decoded_output = tokenizer.decode(encoded_input[0])
+# print("Encoded Input:", encoded_input)
+# print("Decoded Output:", decoded_output)

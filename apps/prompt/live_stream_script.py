@@ -251,6 +251,7 @@ class LiveStreamScriptGenerator:
         message_list = [HumanMessage(content=prompt)]
         max_kb.info(f"润色回答提示词{message_list}")
         result = self.llm.invoke(message_list)
+        max_kb.info(f"润色回答结果{result.content}")
         return result.content
     def generate_script(
         self,
