@@ -853,9 +853,9 @@ class ApplicationSerializer(serializers.Serializer):
         id = serializers.CharField(
             required=True, error_messages=ErrMessage.uuid("应用id")
         )
-        user_id = serializers.UUIDField(
-            required=False, error_messages=ErrMessage.uuid("用户id")
-        )
+        # user_id = serializers.UUIDField(
+        #     required=False, error_messages=ErrMessage.uuid("用户id")
+        # )
         query_text = serializers.CharField(
             required=True, error_messages=ErrMessage.char("查询文本")
         )

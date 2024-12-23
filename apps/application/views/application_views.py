@@ -686,7 +686,7 @@ class Application(APIView):
         )
 
     class HitTest(APIView):
-        authentication_classes = [TokenAuth]
+        # authentication_classes = [TokenAuth]
 
         @action(methods="GET", detail=False)
         @swagger_auto_schema(
@@ -698,30 +698,30 @@ class Application(APIView):
             ),
             tags=["应用"],
         )
-        @has_permissions(
-            ViewPermission(
-                [
-                    RoleConstants.ADMIN,
-                    RoleConstants.USER,
-                    RoleConstants.APPLICATION_ACCESS_TOKEN,
-                    RoleConstants.APPLICATION_KEY,
-                ],
-                [
-                    lambda r, keywords: Permission(
-                        group=Group.APPLICATION,
-                        operate=Operate.USE,
-                        dynamic_tag=keywords.get("application_id"),
-                    )
-                ],
-                compare=CompareConstants.AND,
-            )
-        )
+        # @has_permissions(
+        #     ViewPermission(
+        #         [
+        #             RoleConstants.ADMIN,
+        #             RoleConstants.USER,
+        #             RoleConstants.APPLICATION_ACCESS_TOKEN,
+        #             RoleConstants.APPLICATION_KEY,
+        #         ],
+        #         [
+        #             lambda r, keywords: Permission(
+        #                 group=Group.APPLICATION,
+        #                 operate=Operate.USE,
+        #                 dynamic_tag=keywords.get("application_id"),
+        #             )
+        #         ],
+        #         compare=CompareConstants.AND,
+        #     )
+        # )
         def get(self, request: Request, application_id: str):
             return result.success(
                 ApplicationSerializer.HitTest(
                     data={
                         "id": application_id,
-                        "user_id": request.user.id,
+                        # "user_id": request.user.id,
                         "query_text": request.query_params.get("query_text"),
                         "top_number": request.query_params.get("top_number"),
                         "similarity": request.query_params.get("similarity"),
